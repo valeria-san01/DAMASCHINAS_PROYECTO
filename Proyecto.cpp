@@ -2,6 +2,7 @@
 #include <cmath>
 using namespace std;
 
+//Definicion del tablero 8x8
 int tablero[8][8];
 
 void InicializarTablero(){
