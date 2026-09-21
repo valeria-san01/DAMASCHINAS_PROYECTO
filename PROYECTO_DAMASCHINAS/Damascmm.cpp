@@ -25,7 +25,6 @@ void InicializarTablero(){
             }
         }
     }
-            
 }
 
 void MostrarTablero(){
@@ -46,16 +45,16 @@ void MostrarTablero(){
                 cout << "   \033[0m"; // Celda vacía manteniendo el fondo
             }
             else if(tablero[f][c]==1) {
-                cout << "\033[38;5;232m\033[1m b \033[0m"; // Ficha blanca/clara
+                cout << "\033[38;5;232m\033[1m⚪ \033[0m"; // Ficha blanca/clara
             }
             else if(tablero[f][c]==2) {
-                cout << "\033[38;5;16m\033[1m n \033[0m"; // Ficha negra
+                cout << "\033[38;5;16m\033[1m⚫ \033[0m"; // Ficha negra
             }
             else if(tablero[f][c]==3) {
-                cout << "\033[38;5;21m\033[1m B \033[0m"; // Dama blanca (resaltada)
+                cout << "\033[38;5;21m\033[1m♔ \033[0m"; // Dama blanca (resaltada)
             }
             else if(tablero[f][c]==4) {
-                cout << "\033[38;5;5m\033[1m N \033[0m"; // Dama negra (resaltada)
+                cout << "\033[38;5;5m\033[1m♚ \033[0m"; // Dama negra (resaltada)
             }
         }
         cout << endl; // Salto de línea al terminar cada fila del tablero
@@ -237,7 +236,8 @@ bool CalcularDestino(
 
 // 2. El main va al final para que ya conozca todas las funciones anteriores
 int main(){
-    InicializarTablero();
+    system ("chcp 65001 > nul");//nos ayud a que se vean emogis 
+     InicializarTablero();
     int turno = 1;
     int fo, fd;
     char co_letra;
