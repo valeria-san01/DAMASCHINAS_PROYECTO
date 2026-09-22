@@ -5,7 +5,7 @@
 #include <chrono>
 #include <atomic>
 #include <fstream>
-#include <conio.h> // Necesario para _kbhit() y _getch() en Windows
+#include <conio.h> 
 
 using namespace std;
 
@@ -24,7 +24,7 @@ void temporizadorTurno(int segundos) {
     
     if (!turnoTerminado) {
         tiempoAgotado = true;
-        std::cout << "\n\n¡Se acabó el tiempo de este turno!]\nPresiona cualquier tecla para continuar...\n";
+        std::cout << "\n\n¡Se acabó el tiempo de este turno! \nPresiona cualquier tecla para continuar...\n";
     }
 }
 
@@ -301,4 +301,4 @@ int main(){
         }
     }
     return 0;
-}// guardar y cargar partida
+}
