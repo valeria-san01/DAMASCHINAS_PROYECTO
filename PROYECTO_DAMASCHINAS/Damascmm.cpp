@@ -96,6 +96,39 @@ void InicializarTablero(){
     }
 }
 
+void GuardarPartida() {
+    ofstream archivo("partida_guardada.dat", ios::binary);
+    if (archivo.is_open()) {
+        archivo.write(reinterpret_cast<char*>(&turno), sizeof(turno));
+        archivo.write(reinterpret_cast<char*>(&tiempoBlancas), sizeof(tiempoBlancas));
+        archivo.write(reinterpret_cast<char*>(&tiempoNegras), sizeof(tiempoNegras));
+        archivo.write(reinterpret_cast<char*>(tablero), sizeof(tablero));
+        archivo.close();
+        cout << "\n¡Partida guardada exitosamente!\n";
+    } else {
+        cout << "\nError al intentar guardar la partida.\n";
+    }
+    system("pause");
+}
+
+bool CargarPartida() {
+    ifstream archivo("partida_guardada.dat", ios::binary);
+    if (archivo.is_open()) {
+        archivo.read(reinterpret_cast<char*>(&turno), sizeof(turno));
+        archivo.read(reinterpret_cast<char*>(&tiempoBlancas), sizeof(tiempoBlancas));
+        archivo.read(reinterpret_cast<char*>(&tiempoNegras), sizeof(tiempoNegras));
+        archivo.read(reinterpret_cast<char*>(tablero), sizeof(tablero));
+        archivo.close();
+        cout << "\n¡Partida cargada con éxito!\n";
+        system("pause");
+        return true;
+    } else {
+        cout << "\nNo se encontró ninguna partida guardada.\n";
+        system("pause");
+        return false;
+    }
+}
+
 void MostrarTablero(){
     cout << "    A   B   C   D   E   F   G   H" << endl;
     
@@ -238,6 +271,7 @@ int main(){
     system(" ");
 
     int opcion;
+    bool iniciarJuego = false;
 
             do{
                 system("cls");
@@ -246,7 +280,8 @@ int main(){
                 cout << "====================================================" << endl ;
 
                 cout << "1. Nueva Partida" << endl;
-                cout << "2. Salir" << endl;
+                cout << "2. Cargar partida guardada" << endl;
+                cout << "3. Salir" << endl;
                 cout << "Elige una opcion: ";
                 cin >> opcion;
 
@@ -265,9 +300,19 @@ int main(){
                     turno = 1;
                     partidaTerminada = false;
                     tiempoAgotado = false;
+                    iniciarJuego = true;
+                }
+                   else if(opcion == 2) {
+
+            if(CargarPartida()) {
+                partidaTerminada = false;
+                tiempoAgotado = false;
+                iniciarJuego = true;
+            }
+        }
+             if(iniciarJuego) {
 
             int fo, co, fd, cd;
-
             auto ultimoTiempo = steady_clock::now();
 
             while(true){
@@ -285,8 +330,11 @@ int main(){
                     system("pause");
                             break; 
                 }
-                
-                cout << "Si quieres salir de la partida escribe -1 " << endl; 
+                cout << "____________________________________________" << endl; 
+                cout << "|Si quieres salir de la partida escribe -1 |" << endl; 
+                cout << "|Si quieres guardar la partida escribe  -2 |" << endl;
+                cout << "|__________________________________________|" << endl; 
+
                 cout << "Turno " << (turno==1? "BLANCAS ⚪" : "NEGRAS ⚫") << endl;
                 if(HayComidaObligatoria(turno))
                     cout << "¡COMIDA OBLIGATORIA!" << endl;
@@ -296,6 +344,10 @@ int main(){
                 cout << "Origen ficha (ej: 5 A): " ; 
                 cin >> fo;
                 if(fo==-1) break;//sale al menu pricipal
+                if(fo == -2) {
+                    GuardarPartida();
+                    continue;
+                }
 
                 cin >> colOrigenChar;
 
@@ -318,7 +370,7 @@ int main(){
                 cd = colDestinoChar - 'A';
 
                 if(fo<0||fo>=8||co<0||co>=8){
-                    cout << "Origen fuera del tablero\n"; continue;
+                    cout << "Origen fuera del tablero\n";
                     system("pause"); 
                             continue;
                 }
@@ -352,7 +404,7 @@ int main(){
                 }
             }
         }
-    }while(opcion !=2);
+    }while(opcion !=3);
 
         cout << "gracias por jugar, saliendo del juego...\n"; 
         return 0;
