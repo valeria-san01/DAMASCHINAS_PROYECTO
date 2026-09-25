@@ -1,13 +1,13 @@
-#include <iostream>//entrada y salida de datos 
-#include <cmath>//opc matematicas
-#include <cctype>//manipula y clasifica caracteres 
-#include <thread>//gestiona procesos de ejecucion
-#include <chrono>//gestiona el tiempo
-#include <atomic>//sincroniza y ordena el acceso ala memoria 
-#include <fstream>//lee y escribe 
-#include <conio.h>//entrada y salida de consola
-#include <windows.h> // Para activar colores y emojis en Windows
-#include <sstream>//opera sobre cadenas
+#include <iostream>
+#include <cmath>
+#include <cctype>
+#include <thread>
+#include <chrono>
+#include <atomic>
+#include <fstream>
+#include <conio.h>
+#include <windows.h> 
+#include <sstream>
 #include <vector>
 
 using namespace std;
@@ -17,7 +17,7 @@ int tablero[8][8];
 
 int tiempoBlancas = 300; // 5 minutos
 int tiempoNegras = 300;
-int turno = 1;//controla los turnos 
+int turno = 1; // Controla los turnos 
 
 // Control del temporizador
 atomic<bool> temporizadorActivo(false);
@@ -43,7 +43,7 @@ void InicializarTablero(){
             tablero[f][c] = 0;
         }
     }
-    for(int f=0; f<3; f++){ // fichas negras
+    for(int f=0; f<3; f++){ // Fichas negras
         for(int c=0; c<8; c++){
             if((f+c)%2==1) tablero[f][c]=2;
         }
@@ -70,16 +70,15 @@ void GuardarPartida() {
     getline(cin, nombrePartida);
 
     string nombreArchivoBin = "partida_" + nombrePartida + ".dat";
-    string nombreArchivoTxt = "partida_" + nombrePartida + ".txt";
 
     // VALIDACIÓN: Evitar que se guarde con un nombre existente
     if (ExisteArchivo(nombreArchivoBin)) {
-        cout << "\n[ERROR] ¡Ya existe una partida guardada con ese nombre! Elige otro diferente para evitar sobrescribir.\n";
+        cout << "\n[ERROR] ¡Ya existe una partida guardada con ese nombre! Elige otro diferente.\n";
         system("pause");
         return;
     }
 
-    // Guardar datos binarios de la partida
+    // Guardar datos binarios
     ofstream archivo(nombreArchivoBin, ios::binary);
     if (archivo.is_open()) {
         archivo.write(reinterpret_cast<char*>(&turno), sizeof(turno));
@@ -88,7 +87,7 @@ void GuardarPartida() {
         archivo.write(reinterpret_cast<char*>(tablero), sizeof(tablero));
         archivo.close();
 
-        // Registrar también en un archivo maestro de partidas guardadas para listarlas fácilmente
+        // Registrar en archivo índice
         ofstream indice("partidas_registradas.txt", ios::app);
         if (indice.is_open()) {
             indice << nombrePartida << endl;
@@ -167,7 +166,8 @@ bool CargarPartida() {
     }
 }
 
-void MostrarTablero(){
+// Tablero que resalta la posición del cursor con las flechitas
+void MostrarTableroConCursor(int cursorF, int cursorC){
     cout << "    A   B   C   D   E   F   G   H" << endl;
     
     for(int f=0; f<8; f++){
@@ -175,8 +175,14 @@ void MostrarTablero(){
         
         for(int c=0; c<8; c++){
             bool casillaOscura = (f + c) % 2 == 1;
-            
-            string colorFondo = casillaOscura ? "\033[48;5;94m" : "\033[48;5;223m";
+            string colorFondo;
+
+            if (f == cursorF && c == cursorC) {
+                colorFondo = "\033[48;5;33m"; // Azul brillante para la celda seleccionada por el cursor
+            } else {
+                colorFondo = casillaOscura ? "\033[48;5;94m" : "\033[48;5;223m";
+            }
+
             cout << colorFondo; 
 
             if(tablero[f][c] == 0) {
@@ -184,10 +190,10 @@ void MostrarTablero(){
             }
             else {
                 string fichaStr = "";
-                if(tablero[f][c] == 1) fichaStr = "\033[38;5;15m⚪\033[0m"; // blanca
-                else if(tablero[f][c] == 2) fichaStr = "\033[38;5;0m⚫\033[0m";  // negra
-                else if(tablero[f][c] == 3) fichaStr = "\033[38;5;21m♔\033[0m"; // dama blanca
-                else if(tablero[f][c] == 4) fichaStr = "\033[38;5;5m♚\033[0m";  // dama negra
+                if(tablero[f][c] == 1) fichaStr = "\033[38;5;15m⚪\033[0m"; // Blanca
+                else if(tablero[f][c] == 2) fichaStr = "\033[38;5;0m⚫\033[0m";  // Negra
+                else if(tablero[f][c] == 3) fichaStr = "\033[38;5;21m♔\033[0m"; // Dama blanca
+                else if(tablero[f][c] == 4) fichaStr = "\033[38;5;5m♚\033[0m";  // Dama negra
 
                 cout << " " << fichaStr << colorFondo << " "; 
             }
@@ -339,84 +345,117 @@ int main(){
             }
         }
 
+        // Bucle principal del juego usando las FLECHAS del teclado
         if(iniciarJuego) {
-            int fo, co, fd, cd;
             auto ultimoTiempo = steady_clock::now();
 
             while(true){
-                system("cls");
+                int cursorF = 0, cursorC = 0;
+                int fo = -1, co = -1, fd = -1, cd = -1;
+                bool seleccionandoOrigen = true;
 
-                MostrarTablero();
-                MostrarRelojes();
+                // --- FASE 1: SELECCIONAR ORIGEN CON FLECHAS ---
+                while (seleccionandoOrigen) {
+                    system("cls");
+                    MostrarTableroConCursor(cursorF, cursorC);
+                    MostrarRelojes();
 
-                if(tiempoBlancas <= 0) { 
-                    cout << "¡GANAN LAS NEGRAS POR TIEMPO!" << endl;
-                    system("pause");
-                    break; 
-                }
-                if(tiempoNegras <= 0) { 
-                    cout << "¡GANAN LAS BLANCAS POR TIEMPO!" << endl;
-                    system("pause");
-                    break; 
-                }
-                
-                cout << "____________________________________________" << endl; 
-                cout << "|Si quieres salir de la partida escribe -1 |" << endl; 
-                cout << "|Si quieres guardar la partida escribe  -2 |" << endl;
-                cout << "|__________________________________________|" << endl; 
+                    if(tiempoBlancas <= 0) { 
+                        cout << "¡GANAN LAS NEGRAS POR TIEMPO!" << endl;
+                        system("pause");
+                        fo = -1; break; 
+                    }
+                    if(tiempoNegras <= 0) { 
+                        cout << "¡GANAN LAS BLANCAS POR TIEMPO!" << endl;
+                        system("pause");
+                        fo = -1; break; 
+                    }
 
-                cout << "Turno " << (turno==1? "BLANCAS ⚪" : "NEGRAS ⚫") << endl;
-                if(HayComidaObligatoria(turno))
-                    cout << "¡COMIDA OBLIGATORIA!" << endl;
+                    cout << "____________________________________________" << endl; 
+                    cout << "| Usa las FLECHAS para mover el cursor     |" << endl;
+                    cout << "| ENTER para seleccionar ficha             |" << endl;
+                    cout << "| ESC para salir al menu principal         |" << endl;
+                    cout << "| G para guardar partida                   |" << endl;
+                    cout << "|__________________________________________|" << endl; 
+                    cout << "Turno " << (turno==1? "BLANCAS ⚪" : "NEGRAS ⚫") << endl;
+                    if(HayComidaObligatoria(turno))
+                        cout << "¡COMIDA OBLIGATORIA!" << endl;
 
-                char colOrigenChar, colDestinoChar;
-
-                cout << "Origen ficha (ej: 5 A): " ; 
-                cin >> fo;
-                if(fo==-1) break;
-                if(fo == -2) {
-                    GuardarPartida();
-                    continue;
-                }
-
-                cin >> colOrigenChar;
-
-                cout << "Destino ficha (ej: 4 B): "; 
-                cin >> fd >> colDestinoChar;
-
-                if(cin.fail()) {
-                    cin.clear(); 
-                    cin.ignore(10000, '\n'); 
-                    cout << "Entrada inválida. Usa formato de número y letra (ej: 5 A)\n";
-                    system("pause");
-                    continue;
-                }
-                
-                colOrigenChar = toupper(colOrigenChar);
-                colDestinoChar = toupper(colDestinoChar);
-                co = colOrigenChar - 'A';
-                cd = colDestinoChar - 'A';
-
-                if(fo<0||fo>=8||co<0||co>=8){
-                    cout << "Origen fuera del tablero\n";
-                    system("pause"); 
-                    continue;
-                }
-                if(turno==1 && tablero[fo][co]!=1 && tablero[fo][co]!=3){
-                    cout << "Esa no es una blanca tuya\n";
-                    system("pause");
-                    continue;
-                }
-                if(turno==2 && tablero[fo][co]!=2 && tablero[fo][co]!=4){
-                    cout << "Esa no es una negra tuya\n"; 
-                    system("pause");
-                    continue;
+                    int tecla = _getch();
+                    if (tecla == 224 || tecla == 0) {
+                        int direccion = _getch();
+                        if (direccion == 72) cursorF = (cursorF > 0) ? cursorF - 1 : 7;    // Arriba
+                        else if (direccion == 80) cursorF = (cursorF < 7) ? cursorF + 1 : 0; // Abajo
+                        else if (direccion == 75) cursorC = (cursorC > 0) ? cursorC - 1 : 7; // Izquierda
+                        else if (direccion == 77) cursorC = (cursorC < 7) ? cursorC + 1 : 7; // Derecha
+                    } 
+                    else if (tecla == 13) { // ENTER
+                        fo = cursorF;
+                        co = cursorC;
+                        
+                        if(turno==1 && tablero[fo][co]!=1 && tablero[fo][co]!=3){
+                            cout << "\n¡Esa no es una ficha blanca tuya!\n";
+                            system("pause");
+                            continue;
+                        }
+                        if(turno==2 && tablero[fo][co]!=2 && tablero[fo][co]!=4){
+                            cout << "\n¡Esa no es una ficha negra tuya!\n"; 
+                            system("pause");
+                            continue;
+                        }
+                        seleccionandoOrigen = false; 
+                    }
+                    else if (tecla == 27) { // ESC
+                        fo = -1;
+                        break;
+                    }
+                    else if (tecla == 'g' || tecla == 'G') { // Guardar
+                        GuardarPartida();
+                    }
                 }
 
+                if(fo == -1) break; // Salir al menú principal
+
+                // --- FASE 2: SELECCIONAR DESTINO CON FLECHAS ---
+                bool seleccionandoDestino = true;
+                while (seleccionandoDestino) {
+                    system("cls");
+                    MostrarTableroConCursor(cursorF, cursorC);
+                    MostrarRelojes();
+
+                    cout << "____________________________________________" << endl; 
+                    cout << "| Seleccionando DESTINO para ficha en (" << fo << ", " << (char)('A' + co) << ") |" << endl;
+                    cout << "| ENTER para confirmar movimiento          |" << endl;
+                    cout << "| Otra vez enter para cambiar origen       |" << endl;
+                    cout << "|__________________________________________|" << endl; 
+
+                    int tecla = _getch();
+                    if (tecla == 224 || tecla == 0) {
+                        int direccion = _getch();
+                        if (direccion == 72) cursorF = (cursorF > 0) ? cursorF - 1 : 7;
+                        else if (direccion == 80) cursorF = (cursorF < 7) ? cursorF + 1 : 0;
+                        else if (direccion == 75) cursorC = (cursorC > 0) ? cursorC - 1 : 7;
+                        else if (direccion == 77) cursorC = (cursorC < 7) ? cursorC + 1 : 7;
+                    } 
+                    else if (tecla == 13) { // ENTER
+                        fd = cursorF;
+                        cd = cursorC;
+                        seleccionandoDestino = false;
+                    }
+                    else if (tecla == 8) { // Backspace (Borrar) para re-elegir origen
+                        seleccionandoDestino = false;
+                        seleccionandoOrigen = true;
+                        break;
+                    }
+                }
+
+                if (seleccionandoOrigen) continue; 
+
+                // --- VALIDACIÓN Y EJECUCIÓN DEL MOVIMIENTO ---
                 if(esMovimientoValido(fo, co, fd, cd, turno)) {
                     GuardamovimientoenArchivo(turno, fo, co, fd, cd);
-
                     MovimientosTablero(fo, co, fd, cd);
+                    
                     auto ahora = steady_clock::now();
                     int segGastados = duration_cast<seconds>(ahora - ultimoTiempo).count();
 
@@ -425,14 +464,13 @@ int main(){
 
                     turno = (turno==1)? 2 : 1; 
                     ultimoTiempo = steady_clock::now();
-
                 } else {
-                    cout << "MOVIMIENTO ILEGAL\n";
+                    cout << "\n¡MOVIMIENTO ILEGAL!\n";
                     system("pause");
                 }
             }
         }
-    }while(opcion != 3);
+    } while(opcion != 3);
 
     cout << "Gracias por jugar, saliendo del juego...\n"; 
     return 0;
