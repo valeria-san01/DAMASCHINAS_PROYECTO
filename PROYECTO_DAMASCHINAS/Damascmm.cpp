@@ -30,10 +30,10 @@ string formatoTiempo(int segundos) {
 }
 
 void MostrarRelojes() {
-    cout << "--- RELOJ ---" << endl;
-    cout << "BLANCAS: " << formatoTiempo(tiempoBlancas) << endl;
-    cout << "NEGRAS: " << formatoTiempo(tiempoNegras) << endl;
-    cout << "-------------" << endl;
+    cout << "---- RELOJ ----" << endl;
+    cout << "  BLANCAS:" << formatoTiempo(tiempoBlancas) << endl;
+    cout << "  NEGRAS:" << formatoTiempo(tiempoNegras) << endl;
+    cout << "---------------" << endl;
 }
 
 
@@ -236,75 +236,124 @@ void MovimientosTablero(int fo, int co, int fd, int cd){
 int main(){
     SetConsoleOutputCP(CP_UTF8);
     system(" ");
-    InicializarTablero();
-    int fo, co, fd, cd;
 
-    auto ultimoTiempo = steady_clock::now();
+    int opcion;
 
-    while(true){
-    system("cls");
+            do{
+                system("cls");
+                cout << "====================================================" << endl ;
+                cout << "                  JUEGO  DE  DAMAS                  " << endl ;
+                cout << "====================================================" << endl ;
 
-        MostrarTablero();
-        MostrarRelojes();
+                cout << "1. Nueva Partida" << endl;
+                cout << "2. Salir" << endl;
+                cout << "Elige una opcion: ";
+                cin >> opcion;
 
-        // Revisa si alguien perdió por tiempo
-        if(tiempoBlancas <= 0) { cout << "¡GANAN LAS NEGRAS POR TIEMPO!" << endl; break; }
-        if(tiempoNegras <= 0) { cout << "¡GANAN LAS BLANCAS POR TIEMPO!" << endl; break; }
+                // Valida si el usuario escribe letras en el menú principal
+                if(cin.fail()) {
+                    cin.clear();
+                    cin.ignore(10000, '\n');
+                    continue;
+                }
 
-        cout << "Turno " << (turno==1? "BLANCAS ⚪" : "NEGRAS ⚫") << endl;
-        if(HayComidaObligatoria(turno))
-            cout << "¡COMIDA OBLIGATORIA!" << endl;
+                if(opcion == 1) {
 
-            char colOrigenChar, colDestinoChar;
+                    InicializarTablero();
+                    tiempoBlancas = 300; 
+                    tiempoNegras = 300;
+                    turno = 1;
+                    partidaTerminada = false;
+                    tiempoAgotado = false;
 
-        cout << "Origen ficha (ej: 5 A): "; 
-        cin >> fo >> colOrigenChar;
-        if(fo==-1) break;
+            int fo, co, fd, cd;
 
-        cout << "Destino ficha (ej: 4 B): "; 
-        cin >> fd >> colDestinoChar;
+            auto ultimoTiempo = steady_clock::now();
 
-        // Limpiar el flujo por si el usuario escribe algo inválido y evita el bucle infinito
-        if(cin.fail()) {
-            cin.clear(); // Limpia el error
-            cin.ignore(10000, '\n'); // Descarta la entrada incorrecta
-            cout << "Entrada inválida. Usa formato de número y letra (ej: 5 A)\n";
-            system("pause");
-            continue;
+            while(true){
+            system("cls");
+
+                MostrarTablero();
+                MostrarRelojes();
+
+                // Revisa si alguien perdió por tiempo
+                if(tiempoBlancas <= 0) { cout << "¡GANAN LAS NEGRAS POR TIEMPO!" << endl;
+                    system("pause");
+                            break; 
+                }
+                if(tiempoNegras <= 0) { cout << "¡GANAN LAS BLANCAS POR TIEMPO!" << endl;
+                    system("pause");
+                            break; 
+                }
+                
+                cout << "Si quieres salir de la partida escribe -1 " << endl; 
+                cout << "Turno " << (turno==1? "BLANCAS ⚪" : "NEGRAS ⚫") << endl;
+                if(HayComidaObligatoria(turno))
+                    cout << "¡COMIDA OBLIGATORIA!" << endl;
+
+                    char colOrigenChar, colDestinoChar;
+
+                cout << "Origen ficha (ej: 5 A): " ; 
+                cin >> fo;
+                if(fo==-1) break;//sale al menu pricipal
+
+                cin >> colOrigenChar;
+
+                cout << "Destino ficha (ej: 4 B): "; 
+                cin >> fd >> colDestinoChar;
+
+                // Limpiar el flujo por si el usuario escribe algo inválido y evita el bucle infinito
+                if(cin.fail()) {
+                    cin.clear(); // Limpia el error
+                    cin.ignore(10000, '\n'); // Descarta la entrada incorrecta
+                    cout << "Entrada inválida. Usa formato de número y letra (ej: 5 A)\n";
+                    system("pause");
+                    continue;
+                }
+                
+                // Convertir la letra de la columna a número (A/a -> 0, B/b -> 1, etc.)
+                colOrigenChar = toupper(colOrigenChar);
+                colDestinoChar = toupper(colDestinoChar);
+                co = colOrigenChar - 'A';
+                cd = colDestinoChar - 'A';
+
+                if(fo<0||fo>=8||co<0||co>=8){
+                    cout << "Origen fuera del tablero\n"; continue;
+                    system("pause"); 
+                            continue;
+                }
+                if(turno==1 && tablero[fo][co]!=1 && tablero[fo][co]!=3){
+                    cout << "Esa no es una blanca tuya\n";
+                    system("pause");
+                    continue;
+                }
+                if(turno==2 && tablero[fo][co]!=2 && tablero[fo][co]!=4){
+                    cout << "Esa no es una negra tuya\n"; 
+                    system("pause");
+                    continue;
+                }
+
+                if(esMovimientoValido(fo, co, fd, cd, turno)) {
+                    GuardamovimientoenArchivo(turno, fo, co, fd, cd);
+
+                    MovimientosTablero(fo, co, fd, cd);
+                    auto ahora = steady_clock::now();
+                    int segGastados = duration_cast<seconds>(ahora - ultimoTiempo).count();
+
+                    if(turno == 1) tiempoBlancas -= segGastados;
+                    else tiempoNegras -= segGastados;
+
+                    turno = (turno==1)? 2 : 1; // Cambia de turno
+                    ultimoTiempo = steady_clock::now();
+
+                } else {
+                    cout << "MOVIMIENTO ILEGAL\n";
+                    system("pause");
+                }
+            }
         }
+    }while(opcion !=2);
 
-        // Convertir la letra de la columna a número (A/a -> 0, B/b -> 1, etc.)
-        colOrigenChar = toupper(colOrigenChar);
-        colDestinoChar = toupper(colDestinoChar);
-        co = colOrigenChar - 'A';
-        cd = colDestinoChar - 'A';
-
-        if(fo<0||fo>=8||co<0||co>=8){
-            cout << "Origen fuera del tablero\n"; continue;
-        }
-        if(turno==1 && tablero[fo][co]!=1 && tablero[fo][co]!=3){
-            cout << "Esa no es una blanca tuya\n"; continue;
-        }
-        if(turno==2 && tablero[fo][co]!=2 && tablero[fo][co]!=4){
-            cout << "Esa no es una negra tuya\n"; continue;
-        }
-
-        if(esMovimientoValido(fo, co, fd, cd, turno)) {
-            GuardamovimientoenArchivo(turno, fo, co, fd, cd);
-
-            MovimientosTablero(fo, co, fd, cd);
-            auto ahora = steady_clock::now();
-            int segGastados = duration_cast<seconds>(ahora - ultimoTiempo).count();
-
-            if(turno == 1) tiempoBlancas -= segGastados;
-            else tiempoNegras -= segGastados;
-
-            turno = (turno==1)? 2 : 1; // Cambia de turno
-            ultimoTiempo = steady_clock::now();
-
-        } else {
-            cout << "MOVIMIENTO ILEGAL\n";
-        }
+        cout << "gracias por jugar, saliendo del juego...\n"; 
+        return 0;
     }
-    return 0;
-}
